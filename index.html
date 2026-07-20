@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>t3xture 생일 밸런스 게임</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --orange:#F5821F;
+    --orange-deep:#E8650A;
+    --yellow:#FFC93C;
+    --cream:#FFF6EA;
+    --navy:#1E2237;
+    --pink:#FF6B9D;
+    --mint:#3EC6A8;
+    --sky:#4FA8F5;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    font-family:'Noto Sans KR',system-ui,sans-serif;
+    background:
+      radial-gradient(ellipse 90% 55% at 50% 78%, rgba(245,130,31,.55) 0%, rgba(255,183,77,.35) 40%, rgba(255,246,234,0) 75%),
+      radial-gradient(ellipse 70% 40% at 15% 10%, rgba(255,201,60,.25) 0%, rgba(255,246,234,0) 70%),
+      radial-gradient(ellipse 70% 40% at 85% 15%, rgba(255,150,80,.22) 0%, rgba(255,246,234,0) 70%),
+      linear-gradient(180deg,#FFFBF4 0%, #FFF3E0 45%, #FFE3BC 100%);
+    display:flex;align-items:center;justify-content:center;
+    min-height:100vh;padding:24px;overflow-x:hidden;
+  }
+  .confetti{position:fixed;border-radius:50%;opacity:.55;pointer-events:none;animation:float 7s ease-in-out infinite;}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-18px)}}
+
+  .card{
+    position:relative;width:100%;max-width:960px;
+    background:rgba(255,255,255,.55);
+    backdrop-filter:blur(6px);
+    border:1.5px solid rgba(245,130,31,.25);
+    border-radius:32px;
+    box-shadow:0 18px 50px rgba(232,101,10,.18);
+    padding:40px 48px 32px;
+    overflow:hidden;
+  }
+  .inner{position:relative;z-index:1;display:flex;flex-direction:column;min-height:540px;}
+
+  .badge{
+    align-self:center;
+    font-size:14px;font-weight:700;color:var(--orange-deep);
+    border:1.5px dashed var(--orange);
+    border-radius:999px;padding:7px 22px;letter-spacing:.5px;
+    background:rgba(255,255,255,.7);
+    margin-bottom:18px;
+  }
+  .badge::before{content:"✦ ";}
+  .badge::after{content:" ✦";}
+
+  .page{display:none;flex:1;flex-direction:column;justify-content:center;animation:pop .35s ease;}
+  .page.active{display:flex;}
+  @keyframes pop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+
+  /* ===== 메인(시작) 페이지 ===== */
+  .hero-text{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;}
+
+  h1{
+    text-align:center;font-weight:900;font-size:46px;line-height:1.22;
+    background:linear-gradient(180deg,#FFA531 0%, var(--orange-deep) 80%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 2px 0 rgba(255,255,255,.4);
+    margin:6px 0 14px;
+  }
+  .sub{text-align:center;color:#8a6a4a;font-size:17px;font-weight:500;margin-bottom:30px;}
+
+  .qnum{
+    align-self:center;background:var(--navy);color:var(--yellow);
+    font-weight:800;font-size:14px;letter-spacing:2px;
+    padding:6px 20px;border-radius:999px;margin-bottom:18px;
+  }
+  .qtitle{
+    text-align:center;font-size:26px;font-weight:800;color:#4a3520;
+    line-height:1.5;margin-bottom:30px;word-break:keep-all;
+  }
+  .qtitle span{display:block;}
+  .qtitle .vs-txt{
+    display:block;font-style:normal;font-weight:900;
+    color:var(--orange-deep);font-size:17px;letter-spacing:2px;
+    margin:4px 0;
+  }
+
+  /* 질문 페이지: 좌우 VS 배치 */
+  .options{display:flex;align-items:stretch;gap:0;min-height:190px;max-width:760px;width:100%;margin:0 auto;}
+  .opt{
+    flex:1;position:relative;border:2px solid rgba(245,130,31,.35);
+    background:rgba(255,255,255,.85);
+    border-radius:22px;padding:24px 20px;
+    font-size:20px;font-weight:700;color:#4a3520;
+    cursor:pointer;text-align:center;word-break:keep-all;line-height:1.5;
+    transition:all .18s ease;font-family:inherit;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .opt:hover{transform:translateY(-3px);box-shadow:0 10px 22px rgba(232,101,10,.18);}
+  .opt.selected{
+    background:linear-gradient(135deg,#FFA531,var(--orange-deep));
+    color:#fff;border-color:transparent;
+    box-shadow:0 12px 26px rgba(232,101,10,.35);
+  }
+  .opt.selected::after{content:"✓";position:absolute;top:10px;right:16px;font-size:17px;}
+  .vs{
+    align-self:center;text-align:center;font-weight:900;font-size:20px;
+    color:#fff;background:var(--navy);
+    flex:0 0 56px;width:56px;height:56px;line-height:56px;border-radius:50%;
+    box-shadow:0 4px 10px rgba(30,34,55,.3);margin:0 -14px;z-index:2;
+  }
+
+  .btn{
+    display:block;border:none;cursor:pointer;
+    font-family:inherit;font-weight:800;font-size:18px;
+    padding:16px 0;border-radius:999px;
+    background:linear-gradient(135deg,#FFB14E,var(--orange-deep));
+    color:#fff;letter-spacing:1px;
+    box-shadow:0 8px 20px rgba(232,101,10,.35);
+    transition:transform .15s ease;
+  }
+  .btn:hover{transform:translateY(-2px);}
+  .btn.ghost{
+    background:rgba(255,255,255,.85);color:var(--orange-deep);
+    border:2px solid var(--orange);box-shadow:none;
+  }
+  .btn.start{width:320px;align-self:center;}
+  .navrow{display:flex;gap:12px;margin-top:28px;justify-content:center;}
+  .navrow .btn.prev,
+  .navrow .btn.next{flex:1;max-width:280px;}
+
+  .dots{display:flex;justify-content:center;gap:9px;margin-top:26px;}
+  .dot{
+    width:10px;height:10px;border-radius:50%;
+    background:rgba(245,130,31,.25);transition:all .25s ease;
+  }
+  .dot.on{background:var(--orange-deep);width:30px;border-radius:999px;}
+
+  .end-chars{
+    display:flex;justify-content:center;align-items:flex-end;
+    gap:18px;margin:8px 0 14px;
+  }
+  .char{
+    height:170px;width:auto;
+    filter:drop-shadow(0 8px 16px rgba(232,101,10,.25));
+    animation:bounce 2.4s ease-in-out infinite;
+  }
+  .char-genrangi{animation-delay:.4s;}
+  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  @media (max-width:720px){.char{height:130px;}}
+  .end-title{
+    text-align:center;font-weight:900;font-size:34px;
+    background:linear-gradient(180deg,#FFA531,var(--orange-deep));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    margin-bottom:16px;
+  }
+  .end-text{
+    text-align:center;color:#6b4f33;font-size:18px;line-height:1.9;
+    word-break:keep-all;flex:1;
+  }
+
+  @media (max-width:720px){
+    .card{padding:30px 22px 26px;}
+    h1{font-size:32px;}
+    .qtitle{font-size:20px;}
+    .options{flex-direction:column;max-height:none;}
+    .vs{margin:-14px auto;}
+    .btn.start,.navrow .btn.next{width:100%;flex:1;}
+    .navrow .btn.prev{flex:0 0 32%;}
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="inner">
+    <div class="badge">t3xture 생일 특별 라이브</div>
+
+    <!-- 시작 (메인): 인물 포함 -->
+    <section class="page active" data-page="0">
+      <div class="hero-text" style="flex:1;">
+        <div style="font-size:48px;margin-bottom:10px;">🎉🎂🎉</div>
+        <h1>t3xture의<br>생일 밸런스 게임!</h1>
+        <p class="sub">먹방 &amp; QnA 라이브 특집 🍜 당신의 선택은?</p>
+        <button class="btn start" onclick="go(1)">시작하기 ▶</button>
+      </div>
+    </section>
+
+    <!-- Q1 -->
+    <section class="page" data-page="1">
+      <div class="qnum">Q1 / 5</div>
+      <p class="qtitle"><span>평생 매일매일 가장 좋아하는 음식만 먹기</span><em class="vs-txt">VS</em><span>평생 가장 좋아하는 음식 절대 못 먹기?</span></p>
+      <div class="options">
+        <button class="opt" onclick="pick(this)">😋 평생 매일<br>최애 음식만 먹기</button>
+        <div class="vs">VS</div>
+        <button class="opt" onclick="pick(this)">😭 평생 최애 음식<br>절대 못 먹기</button>
+      </div>
+      <div class="navrow">
+        <button class="btn ghost prev" onclick="go(0)">◀ 이전</button>
+        <button class="btn next" onclick="go(2)">다음 ▶</button>
+      </div>
+    </section>
+
+    <!-- Q2 -->
+    <section class="page" data-page="2">
+      <div class="qnum">Q2 / 5</div>
+      <p class="qtitle"><span>평생 배달 음식 먹기</span><em class="vs-txt">VS</em><span>평생 마트에서 사서 먹기?</span></p>
+      <div class="options">
+        <button class="opt" onclick="pick(this)">🛵 평생<br>배달 음식 먹기</button>
+        <div class="vs">VS</div>
+        <button class="opt" onclick="pick(this)">🛒 평생<br>마트에서 사서 먹기</button>
+      </div>
+      <div class="navrow">
+        <button class="btn ghost prev" onclick="go(1)">◀ 이전</button>
+        <button class="btn next" onclick="go(3)">다음 ▶</button>
+      </div>
+    </section>
+
+    <!-- Q3 -->
+    <section class="page" data-page="3">
+      <div class="qnum">Q3 / 5</div>
+      <p class="qtitle">평생 한 종류의 면만 먹어야 한다면?</p>
+      <div class="options">
+        <button class="opt" onclick="pick(this)">🍜 평생 라면 먹기</button>
+        <div class="vs">VS</div>
+        <button class="opt" onclick="pick(this)">🍝 평생 파스타 먹기</button>
+      </div>
+      <div class="navrow">
+        <button class="btn ghost prev" onclick="go(2)">◀ 이전</button>
+        <button class="btn next" onclick="go(4)">다음 ▶</button>
+      </div>
+    </section>
+
+    <!-- Q4 -->
+    <section class="page" data-page="4">
+      <div class="qnum">Q4 / 5</div>
+      <p class="qtitle"><span>평생 탄산음료 없이 살기</span><em class="vs-txt">VS</em><span>평생 커피 없이 살기?</span></p>
+      <div class="options">
+        <button class="opt" onclick="pick(this)">🥤 평생<br>탄산음료 없이 살기</button>
+        <div class="vs">VS</div>
+        <button class="opt" onclick="pick(this)">☕ 평생<br>커피 없이 살기</button>
+      </div>
+      <div class="navrow">
+        <button class="btn ghost prev" onclick="go(3)">◀ 이전</button>
+        <button class="btn next" onclick="go(5)">다음 ▶</button>
+      </div>
+    </section>
+
+    <!-- Q5 -->
+    <section class="page" data-page="5">
+      <div class="qnum">Q5 / 5</div>
+      <p class="qtitle"><span>내가 요리한 음식 맛있게 먹어주는 사람</span><em class="vs-txt">VS</em><span>나를 위해 매일 맛있는 요리를 차려주는 사람?</span></p>
+      <div class="options">
+        <button class="opt" onclick="pick(this)">🥰 내 요리 맛있게<br>먹어주는 사람</button>
+        <div class="vs">VS</div>
+        <button class="opt" onclick="pick(this)">🍽️ 매일 맛있는 요리<br>차려주는 사람</button>
+      </div>
+      <div class="navrow">
+        <button class="btn ghost prev" onclick="go(4)">◀ 이전</button>
+        <button class="btn next" onclick="go(6)">마무리 ▶</button>
+      </div>
+    </section>
+
+    <!-- 마무리 -->
+    <section class="page" data-page="6">
+      <div class="end-chars">
+        <img src="ddugi.png" alt="뚜기" class="char char-ddugi">
+        <img src="genrangi.png" alt="젠랑이" class="char char-genrangi">
+      </div>
+      <p class="end-title">밸런스 게임 끝!</p>
+      <p class="end-text">
+        t3xture 선수의 생일을<br>
+        <b>젠지와 오뚜기가 진심으로 축하드립니다!</b> 🎂<br>
+        앞으로의 경기도 늘 응원할게요! 🔥<br><br>
+        <b>HAPPY BIRTHDAY, t3xture! 🎉</b>
+      </p>
+      <button class="btn ghost start" onclick="restart()">↺ 처음부터 다시하기</button>
+    </section>
+
+    <div class="dots" id="dots"></div>
+  </div>
+</div>
+
+<script>
+const TOTAL = 7;
+const dotsEl = document.getElementById('dots');
+for (let i = 0; i < TOTAL; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 0 ? ' on' : '');
+  dotsEl.appendChild(d);
+}
+function go(n){
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', +p.dataset.page === n));
+  document.querySelectorAll('.dot').forEach((d,i) => d.classList.toggle('on', i === n));
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function pick(btn){
+  btn.parentElement.querySelectorAll('.opt').forEach(o => o.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+function restart(){
+  document.querySelectorAll('.opt').forEach(o => o.classList.remove('selected'));
+  go(0);
+}
+const colors = ['#F5821F','#FFC93C','#FF6B9D','#3EC6A8','#4FA8F5'];
+for (let i = 0; i < 26; i++) {
+  const c = document.createElement('div');
+  c.className = 'confetti';
+  const s = 6 + Math.random() * 10;
+  c.style.cssText = `width:${s}px;height:${s}px;left:${Math.random()*100}vw;top:${Math.random()*100}vh;background:${colors[i%colors.length]};animation-delay:${Math.random()*6}s;animation-duration:${5+Math.random()*5}s;`;
+  document.body.appendChild(c);
+}
+</script>
+</body>
+</html>
